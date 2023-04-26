@@ -4,7 +4,9 @@
 // ==========================
 package com.sioux.syncer.service;
 
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
+import com.sioux.syncer.MatchWrapper;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -21,8 +23,10 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.xcontent.XContentType;
+import org.springframework.util.StringUtils;
 
 @Data
 @Slf4j
@@ -90,42 +94,37 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   @Override
-  public <T> List<T> match(String index, String value, int page, Class<T> clazz)
+  public <T> List<T> match(String index, Object value, Class<T> clazz) throws IOException {
+    return match(index, value, fields(value, clazz), clazz);
+  }
+
+  @Override
+  public <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
       throws IOException {
-    return match(index, value, fields(clazz), page, DEFAULT_MATCH_SIZE, clazz);
+    MatchWrapper matchWrapper = MatchWrapper.builder()
+        .page(1, DEFAULT_MATCH_SIZE)
+        .build();
+    return match(index, value, fields, matchWrapper, clazz);
   }
 
   @Override
-  public <T> List<T> match(String index, String value, Class<T> clazz) throws IOException {
-    return match(index, value, fields(clazz), 1, DEFAULT_MATCH_SIZE, clazz);
-  }
+  public <T> List<T> match(String index, Object value, List<String> fields,
+      MatchWrapper wrapper, Class<T> clazz) throws IOException {
+    if (fields.isEmpty()) {
+      return new ArrayList<>();
+    }
 
-  @Override
-  public <T> List<T> match(String index, String value, List<String> fields,
-      int page, int size, Class<T> clazz) throws IOException {
-    int startIndex = (page - 1) * size;
+    int startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
     SearchRequest searchRequest = new SearchRequest(index);
-    searchRequest.source()
+    SearchSourceBuilder sourceBuilder = searchRequest.source()
         .query(QueryBuilders.multiMatchQuery(value, fields.toArray(new String[fields.size()])))
-        .from(startIndex).size(size);
+        .from(startIndex).size(wrapper.getSize());
 
-    SearchResponse response = restClient.search(searchRequest, RequestOptions.DEFAULT);
-    return parse(response, clazz);
-  }
-
-  @Override
-  public <T> List<T> match(String index, String value, List<String> fields,
-      int page, int size, String orderBy, String order, Class<T> clazz) throws IOException {
-    int startIndex = (page - 1) * size;
-    SearchRequest searchRequest = new SearchRequest(index);
-    searchRequest.source()
-        .query(QueryBuilders.multiMatchQuery(value, fields.toArray(new String[fields.size()])))
-        .from(startIndex).size(size);
-    if (orderBy != null) {
-      if (SortOrder.ASC.name().equalsIgnoreCase(order)) {
-        searchRequest.source().sort(orderBy, SortOrder.ASC);
+    if (StringUtils.hasText(wrapper.getOrderBy())) {
+      if (SortOrder.ASC.name().equalsIgnoreCase(wrapper.getOrder().name())) {
+        sourceBuilder.sort(wrapper.getOrderBy(), SortOrder.ASC);
       } else {
-        searchRequest.source().sort(orderBy, SortOrder.DESC);
+        sourceBuilder.sort(wrapper.getOrderBy(), SortOrder.DESC);
       }
     }
 
@@ -133,13 +132,18 @@ public class DocumentServiceImpl implements DocumentService {
     return parse(response, clazz);
   }
 
-  private List<String> fields(Class clazz) {
-    ArrayList<String> fieldNames = new ArrayList<>();
+  private List<String> fields(Object value, Class clazz) {
+    Class<?> valueClass = value.getClass();
 
+    ArrayList<String> fieldNames = new ArrayList<>();
     Field[] fields = clazz.getDeclaredFields();
     for (Field field : fields) {
       field.setAccessible(true);
-      fieldNames.add(field.getName());
+
+      Class<?> fieldClass = field.getType();
+      if (valueClass == fieldClass) {
+        fieldNames.add(StrUtil.toUnderlineCase(field.getName()));
+      }
     }
 
     return fieldNames;

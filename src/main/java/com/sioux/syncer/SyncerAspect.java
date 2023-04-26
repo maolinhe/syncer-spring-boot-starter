@@ -4,18 +4,24 @@
 // ==========================
 package com.sioux.syncer;
 
+import cn.hutool.core.util.StrUtil;
 import com.sioux.syncer.annotation.Delete;
 import com.sioux.syncer.annotation.DeleteById;
 import com.sioux.syncer.annotation.ElasticSyncer;
 import com.sioux.syncer.annotation.Match;
 import com.sioux.syncer.annotation.Push;
 import com.sioux.syncer.annotation.Update;
+import com.sioux.syncer.mapper.BaseEsMapper;
 import com.sioux.syncer.service.DocumentService;
 import com.sioux.syncer.service.ThreadService;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -50,33 +56,50 @@ public class SyncerAspect {
   }
 
   @Around("matchPointCut()")
-  public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
+  public Object aroundMatch(ProceedingJoinPoint joinPoint) throws Throwable {
     Class<?> mapperClazz = joinPoint.getTarget().getClass();
-    Class<?> modelClazz = (Class<?>) ((ParameterizedType) mapperClazz.getGenericSuperclass()).getActualTypeArguments()[0];
-
-    String index = modelClazz.getSimpleName().toLowerCase();
-    ElasticSyncer syncer = mapperClazz.getAnnotation(ElasticSyncer.class);
-    if (syncer != null) {
-      index = StringUtils.hasText(syncer.index()) ? syncer.index() : index;
+    Type superType = mapperClazz.getGenericSuperclass();
+    if (superType == null) {
+      return joinPoint.proceed();
     }
 
-    MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-    Method method = methodSignature.getMethod();
-    if (method.isAnnotationPresent(Match.class)) {
-      Object[] args = joinPoint.getArgs();
-      if (args.length != 1) {
-        throw new IllegalArgumentException("Arguments count is illegal for matching");
+    Type[] typeArguments = ((ParameterizedType) mapperClazz.getGenericSuperclass()).getActualTypeArguments();
+    if (typeArguments == null || typeArguments.length != 1) {
+      return joinPoint.proceed();
+    }
+    Class<?> modelClazz = (Class<?>) typeArguments[0];
+
+    Class<?> superclass = mapperClazz.getSuperclass();
+    if (superclass == BaseEsMapper.class) {
+      String index = StrUtil.toUnderlineCase(modelClazz.getSimpleName());
+      ElasticSyncer syncer = mapperClazz.getAnnotation(ElasticSyncer.class);
+      if (syncer != null) {
+        index = StringUtils.hasText(syncer.index()) ? syncer.index() : index;
       }
 
-      return doElasticMatch(index, String.valueOf(args[0]), modelClazz);
+      Object[] args = joinPoint.getArgs();
+      return doElasticMatch(index, args, modelClazz);
     }
 
     return joinPoint.proceed();
   }
 
-  private Object doElasticMatch(String index, String value, Class<?> clazz)
-      throws IOException {
-    return documentService.match(index, value, clazz);
+  private Object doElasticMatch(String index, Object[] args, Class<?> clazz)
+      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    Class<? extends DocumentService> documentServiceClass = documentService.getClass();
+    Class<?>[] paramClasses = new Class[args.length + 2];
+    Object[] allParams = new Object[args.length + 2];
+    for (int i = 0; i < args.length; i++) {
+      paramClasses[i + 1] = args[i].getClass();
+      allParams[i + 1] = args[i];
+    }
+    paramClasses[0] = String.class;
+    paramClasses[args.length + 1] = clazz;
+    Method match = documentServiceClass.getDeclaredMethod("match", paramClasses);
+
+    allParams[0] = index;
+    allParams[args.length + 1] = clazz;
+    return match.invoke(documentService, allParams);
   }
 
   @After("elasticSyncerPointCut()")

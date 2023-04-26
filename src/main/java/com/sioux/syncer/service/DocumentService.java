@@ -4,6 +4,7 @@
 // ==========================
 package com.sioux.syncer.service;
 
+import com.sioux.syncer.MatchWrapper;
 import java.io.IOException;
 import java.util.List;
 
@@ -23,13 +24,11 @@ public interface DocumentService {
   void delete(String index, Object doc)
       throws NoSuchFieldException, IllegalAccessException, IOException;
 
-  <T> List<T> match(String index, String value, List<String> fields,
-      int page, int size, String orderBy, String order, Class<T> clazz) throws IOException;
+  <T> List<T> match(String index, Object value, Class<T> clazz) throws IOException;
 
-  <T> List<T> match(String index, String value, List<String> fields,
-      int page, int size, Class<T> clazz) throws IOException;
+  <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
+      throws IOException;
 
-  <T> List<T> match(String index, String value, int page, Class<T> clazz) throws IOException;
-
-  <T> List<T> match(String index, String value, Class<T> clazz) throws IOException;
+  <T> List<T> match(String index, Object value, List<String> fields, MatchWrapper matchWrapper,
+      Class<T> clazz) throws IOException;
 }
