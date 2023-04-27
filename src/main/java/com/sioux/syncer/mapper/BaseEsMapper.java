@@ -6,9 +6,14 @@ package com.sioux.syncer.mapper;
 
 import com.sioux.syncer.MatchWrapper;
 import com.sioux.syncer.annotation.Match;
+import com.sioux.syncer.annotation.Push;
 import java.util.List;
 
 public abstract class BaseEsMapper<T> {
+
+  @Push
+  public void push(Object value) {
+  }
 
   @Match
   public List<T> match(Object value) {

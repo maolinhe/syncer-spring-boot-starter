@@ -17,6 +17,8 @@ public class MatchWrapper {
 
   protected Order order;
 
+  private static final int DEFAULT_MATCH_SIZE = 32;
+
   private MatchWrapper() {
   }
 
@@ -33,10 +35,15 @@ public class MatchWrapper {
       wrapper = new MatchWrapper();
     }
 
-    public MatchWrapperBuilder page(int page, int size) {
-      wrapper.page = page;
-      wrapper.size = size;
+    public MatchWrapperBuilder page(Integer page, Integer size) {
+      wrapper.page = page == null || page <= 0 ? 1 : page;
+      wrapper.size = size == null || size <= 0 ? DEFAULT_MATCH_SIZE : size > 1000 ? 1000 : size;
+      return this;
+    }
 
+    public MatchWrapperBuilder page(Integer page) {
+      wrapper.page = page == null || page <= 0 ? 1 : page;
+      wrapper.size = DEFAULT_MATCH_SIZE;
       return this;
     }
 

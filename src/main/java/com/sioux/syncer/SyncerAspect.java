@@ -20,8 +20,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
@@ -55,8 +53,21 @@ public class SyncerAspect {
   public void matchPointCut() {
   }
 
+  @Pointcut("@annotation(com.sioux.syncer.annotation.Push)")
+  public void pushPointCut() {
+  }
+
   @Around("matchPointCut()")
   public Object aroundMatch(ProceedingJoinPoint joinPoint) throws Throwable {
+    return around(joinPoint);
+  }
+
+  @Around("pushPointCut()")
+  public Object aroundPush(ProceedingJoinPoint joinPoint) throws Throwable {
+    return around(joinPoint);
+  }
+
+  public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
     Class<?> mapperClazz = joinPoint.getTarget().getClass();
     Type superType = mapperClazz.getGenericSuperclass();
     if (superType == null) {
@@ -78,28 +89,37 @@ public class SyncerAspect {
       }
 
       Object[] args = joinPoint.getArgs();
-      return doElasticMatch(index, args, modelClazz);
+      MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
+      Method method = methodSignature.getMethod();
+      if (method.isAnnotationPresent(Match.class)) {
+        return doElasticMatch(index, args, modelClazz);
+      } else if (method.isAnnotationPresent(Push.class)) {
+        documentService.upsert(index, args[0]);
+        return null;
+      }
+
     }
 
     return joinPoint.proceed();
   }
 
   private Object doElasticMatch(String index, Object[] args, Class<?> clazz)
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+      throws InvocationTargetException, IllegalAccessException {
     Class<? extends DocumentService> documentServiceClass = documentService.getClass();
-    Class<?>[] paramClasses = new Class[args.length + 2];
     Object[] allParams = new Object[args.length + 2];
-    for (int i = 0; i < args.length; i++) {
-      paramClasses[i + 1] = args[i].getClass();
-      allParams[i + 1] = args[i];
-    }
-    paramClasses[0] = String.class;
-    paramClasses[args.length + 1] = clazz;
-    Method match = documentServiceClass.getDeclaredMethod("match", paramClasses);
+    System.arraycopy(args, 0, allParams, 1, args.length);
 
     allParams[0] = index;
     allParams[args.length + 1] = clazz;
-    return match.invoke(documentService, allParams);
+    Method[] methods = documentServiceClass.getMethods();
+    for (Method method : methods) {
+      int paramCount = method.getParameterCount();
+      if (paramCount == allParams.length) {
+        return method.invoke(documentService, allParams);
+      }
+    }
+
+    return null;
   }
 
   @After("elasticSyncerPointCut()")
