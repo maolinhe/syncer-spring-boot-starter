@@ -24,7 +24,7 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.After;
+import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -105,13 +105,12 @@ public class SyncerAspect {
 
   private Object doElasticMatch(String index, Object[] args, Class<?> clazz)
       throws InvocationTargetException, IllegalAccessException {
-    Class<? extends DocumentService> documentServiceClass = documentService.getClass();
     Object[] allParams = new Object[args.length + 2];
     System.arraycopy(args, 0, allParams, 1, args.length);
-
     allParams[0] = index;
     allParams[args.length + 1] = clazz;
-    Method[] methods = documentServiceClass.getMethods();
+
+    Method[] methods = documentService.getClass().getMethods();
     for (Method method : methods) {
       int paramCount = method.getParameterCount();
       if (paramCount == allParams.length) {
@@ -122,7 +121,7 @@ public class SyncerAspect {
     return null;
   }
 
-  @After("elasticSyncerPointCut()")
+  @AfterReturning("elasticSyncerPointCut()")
   public void after(JoinPoint joinPoint)
       throws IOException, NoSuchFieldException, IllegalAccessException {
     MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();

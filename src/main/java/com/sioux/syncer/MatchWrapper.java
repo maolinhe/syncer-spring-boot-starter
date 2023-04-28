@@ -54,6 +54,15 @@ public class MatchWrapper {
       return this;
     }
 
+    public MatchWrapperBuilder order(String orderBy, String order) {
+      Order o = Order.from(order);
+      if (o != null) {
+        return order(orderBy, o);
+      }
+
+      return this;
+    }
+
     public MatchWrapper build() {
       return wrapper;
     }

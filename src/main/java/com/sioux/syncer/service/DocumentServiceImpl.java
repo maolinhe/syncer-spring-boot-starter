@@ -4,7 +4,6 @@
 // ==========================
 package com.sioux.syncer.service;
 
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSON;
 import com.sioux.syncer.MatchWrapper;
 import java.io.IOException;
@@ -94,11 +93,6 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   @Override
-  public <T> List<T> match(String index, Object value, Class<T> clazz) throws IOException {
-    return match(index, value, fields(value, clazz), clazz);
-  }
-
-  @Override
   public <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
       throws IOException {
     MatchWrapper matchWrapper = MatchWrapper.builder()
@@ -130,23 +124,6 @@ public class DocumentServiceImpl implements DocumentService {
 
     SearchResponse response = restClient.search(searchRequest, RequestOptions.DEFAULT);
     return parse(response, clazz);
-  }
-
-  private List<String> fields(Object value, Class clazz) {
-    Class<?> valueClass = value.getClass();
-
-    ArrayList<String> fieldNames = new ArrayList<>();
-    Field[] fields = clazz.getDeclaredFields();
-    for (Field field : fields) {
-      field.setAccessible(true);
-
-      Class<?> fieldClass = field.getType();
-      if (valueClass == fieldClass) {
-        fieldNames.add(StrUtil.toUnderlineCase(field.getName()));
-      }
-    }
-
-    return fieldNames;
   }
 
   private <T> List<T> parse(SearchResponse response, Class<T> clazz) {

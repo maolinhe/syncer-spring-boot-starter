@@ -24,8 +24,6 @@ public interface DocumentService {
   void delete(String index, Object doc)
       throws NoSuchFieldException, IllegalAccessException, IOException;
 
-  <T> List<T> match(String index, Object value, Class<T> clazz) throws IOException;
-
   <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
       throws IOException;
 

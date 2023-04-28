@@ -12,12 +12,7 @@ import java.util.List;
 public abstract class BaseEsMapper<T> {
 
   @Push
-  public void push(Object value) {
-  }
-
-  @Match
-  public List<T> match(Object value) {
-    return null;
+  public void push(T value) {
   }
 
   @Match
