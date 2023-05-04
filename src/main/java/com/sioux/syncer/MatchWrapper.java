@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class MatchWrapper {
 
-  protected int page;
+  protected long page;
 
   protected int size;
 
@@ -35,13 +35,13 @@ public class MatchWrapper {
       wrapper = new MatchWrapper();
     }
 
-    public MatchWrapperBuilder page(Integer page, Integer size) {
+    public MatchWrapperBuilder page(Long page, Integer size) {
       wrapper.page = page == null || page <= 0 ? 1 : page;
       wrapper.size = size == null || size <= 0 ? DEFAULT_MATCH_SIZE : size > 1000 ? 1000 : size;
       return this;
     }
 
-    public MatchWrapperBuilder page(Integer page) {
+    public MatchWrapperBuilder page(Long page) {
       wrapper.page = page == null || page <= 0 ? 1 : page;
       wrapper.size = DEFAULT_MATCH_SIZE;
       return this;

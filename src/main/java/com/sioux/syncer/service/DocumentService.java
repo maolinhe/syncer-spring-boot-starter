@@ -5,6 +5,7 @@
 package com.sioux.syncer.service;
 
 import com.sioux.syncer.MatchWrapper;
+import com.sioux.syncer.model.Hits;
 import java.io.IOException;
 import java.util.List;
 
@@ -24,9 +25,9 @@ public interface DocumentService {
   void delete(String index, Object doc)
       throws NoSuchFieldException, IllegalAccessException, IOException;
 
-  <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
+  <T> Hits<T> match(String index, Object value, List<String> fields, Class<T> clazz)
       throws IOException;
 
-  <T> List<T> match(String index, Object value, List<String> fields, MatchWrapper matchWrapper,
+  <T> Hits<T> match(String index, Object value, List<String> fields, MatchWrapper matchWrapper,
       Class<T> clazz) throws IOException;
 }

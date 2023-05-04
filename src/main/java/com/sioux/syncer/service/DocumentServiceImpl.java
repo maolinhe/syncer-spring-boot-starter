@@ -6,6 +6,7 @@ package com.sioux.syncer.service;
 
 import com.alibaba.fastjson2.JSON;
 import com.sioux.syncer.MatchWrapper;
+import com.sioux.syncer.model.Hits;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
 import org.elasticsearch.xcontent.XContentType;
@@ -93,26 +95,28 @@ public class DocumentServiceImpl implements DocumentService {
   }
 
   @Override
-  public <T> List<T> match(String index, Object value, List<String> fields, Class<T> clazz)
+  public <T> Hits<T> match(String index, Object value, List<String> fields, Class<T> clazz)
       throws IOException {
     MatchWrapper matchWrapper = MatchWrapper.builder()
-        .page(1, DEFAULT_MATCH_SIZE)
+        .page(1L, DEFAULT_MATCH_SIZE)
         .build();
     return match(index, value, fields, matchWrapper, clazz);
   }
 
   @Override
-  public <T> List<T> match(String index, Object value, List<String> fields,
+  public <T> Hits<T> match(String index, Object value, List<String> fields,
       MatchWrapper wrapper, Class<T> clazz) throws IOException {
     if (fields.isEmpty()) {
-      return new ArrayList<>();
+      Hits<T> tHits = new Hits<>();
+      tHits.setData(new ArrayList<>());
+      return tHits;
     }
 
-    int startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
+    long startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
     SearchRequest searchRequest = new SearchRequest(index);
     SearchSourceBuilder sourceBuilder = searchRequest.source()
         .query(QueryBuilders.multiMatchQuery(value, fields.toArray(new String[fields.size()])))
-        .from(startIndex).size(wrapper.getSize());
+        .from((int) startIndex).size(wrapper.getSize());
 
     if (StringUtils.hasText(wrapper.getOrderBy())) {
       if (SortOrder.ASC.name().equalsIgnoreCase(wrapper.getOrder().name())) {
@@ -126,12 +130,17 @@ public class DocumentServiceImpl implements DocumentService {
     return parse(response, clazz);
   }
 
-  private <T> List<T> parse(SearchResponse response, Class<T> clazz) {
+  private <T> Hits<T> parse(SearchResponse response, Class<T> clazz) {
+    Hits<T> dataHits = new Hits<>();
+
+    SearchHits searchHits = response.getHits();
+    dataHits.setTotalCount(searchHits.getTotalHits().value);
+
     ArrayList<T> data = new ArrayList<>();
-    SearchHit[] hits = response.getHits().getHits();
-    for (SearchHit hit : hits) {
+    for (SearchHit hit : searchHits.getHits()) {
       data.add(JSON.parseObject(hit.getSourceAsString(), clazz));
     }
-    return data;
+    dataHits.setData(data);
+    return dataHits;
   }
 }

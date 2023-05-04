@@ -7,6 +7,7 @@ package com.sioux.syncer.mapper;
 import com.sioux.syncer.MatchWrapper;
 import com.sioux.syncer.annotation.Match;
 import com.sioux.syncer.annotation.Push;
+import com.sioux.syncer.model.Hits;
 import java.util.List;
 
 public abstract class BaseEsMapper<T> {
@@ -16,12 +17,12 @@ public abstract class BaseEsMapper<T> {
   }
 
   @Match
-  public List<T> match(Object value, List<String> matchFields) {
+  public Hits<T> match(Object value, List<String> matchFields) {
     return null;
   }
 
   @Match
-  public List<T> match(Object value, List<String> matchFields, MatchWrapper matchWrapper) {
+  public Hits<T> match(Object value, List<String> matchFields, MatchWrapper matchWrapper) {
     return null;
   }
 }
