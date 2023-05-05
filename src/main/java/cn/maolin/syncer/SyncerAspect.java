@@ -1,7 +1,3 @@
-// ==========================
-// Copyright (c) 2023-04-23 Sioux
-// All rights reserved.
-// ==========================
 package cn.maolin.syncer;
 
 import cn.hutool.core.util.StrUtil;

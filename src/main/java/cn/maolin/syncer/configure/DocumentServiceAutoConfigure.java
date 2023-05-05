@@ -1,7 +1,3 @@
-// ==========================
-// Copyright (c) 2023-04-23 Sioux
-// All rights reserved.
-// ==========================
 package cn.maolin.syncer.configure;
 
 import cn.maolin.syncer.service.DocumentService;

@@ -1,7 +1,3 @@
-// ==========================
-// Copyright (c) 2023-04-24 Sioux
-// All rights reserved.
-// ==========================
 package cn.maolin.syncer.mapper;
 
 import cn.maolin.syncer.annotation.Match;
