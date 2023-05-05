@@ -1,4 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.sioux.syncer.configure.SyncerAutoConfigure,\
-  com.sioux.syncer.configure.DocumentServiceAutoConfigure,\
-  com.sioux.syncer.configure.ThreadPoolConfigure
+  cn.maolin.syncer.configure.SyncerAutoConfigure,\
+  cn.maolin.syncer.configure.DocumentServiceAutoConfigure,\
+  cn.maolin.syncer.configure.ThreadPoolConfigure

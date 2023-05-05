@@ -2,7 +2,7 @@
 // Copyright (c) 2023-04-26 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer;
+package cn.maolin.syncer;
 
 import lombok.Data;
 

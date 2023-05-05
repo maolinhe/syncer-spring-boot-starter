@@ -2,11 +2,11 @@
 // Copyright (c) 2023-04-23 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.configure;
+package cn.maolin.syncer.configure;
 
-import com.sioux.syncer.SyncerAspect;
-import com.sioux.syncer.service.DocumentService;
-import com.sioux.syncer.service.ThreadService;
+import cn.maolin.syncer.SyncerAspect;
+import cn.maolin.syncer.service.DocumentService;
+import cn.maolin.syncer.service.ThreadService;
 import lombok.Data;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

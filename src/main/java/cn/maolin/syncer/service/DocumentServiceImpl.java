@@ -2,11 +2,11 @@
 // Copyright (c) 2023-04-23 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.service;
+package cn.maolin.syncer.service;
 
 import com.alibaba.fastjson2.JSON;
-import com.sioux.syncer.MatchWrapper;
-import com.sioux.syncer.model.Hits;
+import cn.maolin.syncer.MatchWrapper;
+import cn.maolin.syncer.model.Hits;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;

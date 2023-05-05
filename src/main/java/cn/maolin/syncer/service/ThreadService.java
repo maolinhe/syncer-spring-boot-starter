@@ -2,7 +2,7 @@
 // Copyright (c) 2023-04-24 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.service;
+package cn.maolin.syncer.service;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

@@ -2,18 +2,18 @@
 // Copyright (c) 2023-04-23 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer;
+package cn.maolin.syncer;
 
 import cn.hutool.core.util.StrUtil;
-import com.sioux.syncer.annotation.Delete;
-import com.sioux.syncer.annotation.DeleteById;
-import com.sioux.syncer.annotation.ElasticSyncer;
-import com.sioux.syncer.annotation.Match;
-import com.sioux.syncer.annotation.Push;
-import com.sioux.syncer.annotation.Update;
-import com.sioux.syncer.mapper.BaseEsMapper;
-import com.sioux.syncer.service.DocumentService;
-import com.sioux.syncer.service.ThreadService;
+import cn.maolin.syncer.annotation.Delete;
+import cn.maolin.syncer.annotation.DeleteById;
+import cn.maolin.syncer.annotation.ElasticSyncer;
+import cn.maolin.syncer.annotation.Match;
+import cn.maolin.syncer.annotation.Push;
+import cn.maolin.syncer.annotation.Update;
+import cn.maolin.syncer.mapper.BaseEsMapper;
+import cn.maolin.syncer.service.DocumentService;
+import cn.maolin.syncer.service.ThreadService;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -45,15 +45,15 @@ public class SyncerAspect {
     this.threadService = threadService;
   }
 
-  @Pointcut("@annotation(com.sioux.syncer.annotation.ElasticSyncer)")
+  @Pointcut("@annotation(cn.maolin.syncer.annotation.ElasticSyncer)")
   public void elasticSyncerPointCut() {
   }
 
-  @Pointcut("@annotation(com.sioux.syncer.annotation.Match)")
+  @Pointcut("@annotation(cn.maolin.syncer.annotation.Match)")
   public void matchPointCut() {
   }
 
-  @Pointcut("@annotation(com.sioux.syncer.annotation.Push)")
+  @Pointcut("@annotation(cn.maolin.syncer.annotation.Push)")
   public void pushPointCut() {
   }
 

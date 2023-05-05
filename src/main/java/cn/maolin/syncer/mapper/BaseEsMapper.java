@@ -2,12 +2,12 @@
 // Copyright (c) 2023-04-24 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.mapper;
+package cn.maolin.syncer.mapper;
 
-import com.sioux.syncer.MatchWrapper;
-import com.sioux.syncer.annotation.Match;
-import com.sioux.syncer.annotation.Push;
-import com.sioux.syncer.model.Hits;
+import cn.maolin.syncer.annotation.Match;
+import cn.maolin.syncer.annotation.Push;
+import cn.maolin.syncer.MatchWrapper;
+import cn.maolin.syncer.model.Hits;
 import java.util.List;
 
 public abstract class BaseEsMapper<T> {

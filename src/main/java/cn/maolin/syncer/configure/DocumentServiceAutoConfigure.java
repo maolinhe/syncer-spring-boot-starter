@@ -2,10 +2,10 @@
 // Copyright (c) 2023-04-23 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.configure;
+package cn.maolin.syncer.configure;
 
-import com.sioux.syncer.service.DocumentService;
-import com.sioux.syncer.service.DocumentServiceImpl;
+import cn.maolin.syncer.service.DocumentService;
+import cn.maolin.syncer.service.DocumentServiceImpl;
 import lombok.Data;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

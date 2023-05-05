@@ -2,7 +2,7 @@
 // Copyright (c) 2023-04-23 Sioux
 // All rights reserved.
 // ==========================
-package com.sioux.syncer.annotation;
+package cn.maolin.syncer.annotation;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

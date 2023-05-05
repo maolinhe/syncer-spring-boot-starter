@@ -1,4 +1,4 @@
-package com.sioux.syncer.model;
+package cn.maolin.syncer.model;
 
 import java.util.List;
 import lombok.Data;
