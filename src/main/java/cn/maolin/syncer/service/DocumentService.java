@@ -1,9 +1,10 @@
 package cn.maolin.syncer.service;
 
-import cn.maolin.syncer.MatchWrapper;
+import cn.maolin.syncer.model.MatchWrapper;
 import cn.maolin.syncer.model.Hits;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface DocumentService {
 
@@ -25,5 +26,10 @@ public interface DocumentService {
       throws IOException;
 
   <T> Hits<T> match(String index, Object value, List<String> fields, MatchWrapper matchWrapper,
+      Class<T> clazz) throws IOException;
+
+  <T> Hits<T> match(String index, Map<Object, List<String>> map, Class<T> clazz) throws IOException;
+
+  <T> Hits<T> match(String index, Map<Object, List<String>> map, MatchWrapper wrapper,
       Class<T> clazz) throws IOException;
 }

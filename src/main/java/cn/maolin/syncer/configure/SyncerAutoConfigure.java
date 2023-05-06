@@ -1,6 +1,7 @@
 package cn.maolin.syncer.configure;
 
-import cn.maolin.syncer.SyncerAspect;
+import cn.maolin.syncer.aspect.AnnotationSyncerAspect;
+import cn.maolin.syncer.aspect.MapperSyncerAspect;
 import cn.maolin.syncer.service.DocumentService;
 import cn.maolin.syncer.service.ThreadService;
 import lombok.Data;
@@ -11,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConditionalOnClass(value = {SyncerAspect.class})
+@ConditionalOnClass(value = {AnnotationSyncerAspect.class})
 public class SyncerAutoConfigure {
 
   private final DocumentService documentService;
@@ -25,7 +26,13 @@ public class SyncerAutoConfigure {
 
   @Bean
   @ConditionalOnMissingBean
-  SyncerAspect syncerAspect() {
-    return new SyncerAspect(documentService, threadService);
+  AnnotationSyncerAspect annotationSyncerAspect() {
+    return new AnnotationSyncerAspect(documentService, threadService);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  MapperSyncerAspect mapperSyncerAspect() {
+    return new MapperSyncerAspect(documentService, threadService);
   }
 }

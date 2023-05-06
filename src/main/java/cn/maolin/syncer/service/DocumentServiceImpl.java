@@ -1,12 +1,15 @@
 package cn.maolin.syncer.service;
 
 import com.alibaba.fastjson2.JSON;
-import cn.maolin.syncer.MatchWrapper;
+import cn.maolin.syncer.model.MatchWrapper;
 import cn.maolin.syncer.model.Hits;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +20,8 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.DisMaxQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
@@ -102,17 +107,52 @@ public class DocumentServiceImpl implements DocumentService {
   @Override
   public <T> Hits<T> match(String index, Object value, List<String> fields,
       MatchWrapper wrapper, Class<T> clazz) throws IOException {
-    if (fields.isEmpty()) {
+    if (value == null || fields == null || fields.isEmpty()) {
       Hits<T> tHits = new Hits<>();
       tHits.setData(new ArrayList<>());
       return tHits;
     }
 
-    long startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
+    HashMap<Object, List<String>> map = new HashMap<>();
+    map.put(value, fields);
+    return match(index, map, wrapper, clazz);
+  }
+
+  @Override
+  public <T> Hits<T> match(String index, Map<Object, List<String>> map, Class<T> clazz)
+      throws IOException {
+    MatchWrapper matchWrapper = MatchWrapper.builder()
+        .page(1L, DEFAULT_MATCH_SIZE)
+        .build();
+    return match(index, map, matchWrapper, clazz);
+  }
+
+  @Override
+  public <T> Hits<T> match(String index, Map<Object, List<String>> map, MatchWrapper wrapper,
+      Class<T> clazz) throws IOException {
+    if (map == null || map.isEmpty()) {
+      Hits<T> tHits = new Hits<>();
+      tHits.setData(new ArrayList<>());
+      return tHits;
+    }
+
     SearchRequest searchRequest = new SearchRequest(index);
-    SearchSourceBuilder sourceBuilder = searchRequest.source()
-        .query(QueryBuilders.multiMatchQuery(value, fields.toArray(new String[fields.size()])))
-        .from((int) startIndex).size(wrapper.getSize());
+    SearchSourceBuilder sourceBuilder = searchRequest.source();
+
+    DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
+    List<QueryBuilder> multiDisMax = disMaxQueryBuilder.innerQueries();
+    Iterator<Object> keyIter = map.keySet().iterator();
+    while (keyIter.hasNext()) {
+      Object key = keyIter.next();
+      List<String> fields = map.get(key);
+      for (String field : fields) {
+        multiDisMax.add(QueryBuilders.matchQuery(field, key));
+      }
+    }
+    sourceBuilder.query(disMaxQueryBuilder);
+
+    long startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
+    sourceBuilder.from((int) startIndex).size(wrapper.getSize());
 
     if (StringUtils.hasText(wrapper.getOrderBy())) {
       if (SortOrder.ASC.name().equalsIgnoreCase(wrapper.getOrder().name())) {

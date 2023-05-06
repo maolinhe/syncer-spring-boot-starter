@@ -1,4 +1,4 @@
-package cn.maolin.syncer;
+package cn.maolin.syncer.model;
 
 public enum Order {
 

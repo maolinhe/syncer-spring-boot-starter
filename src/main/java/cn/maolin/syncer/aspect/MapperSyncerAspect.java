@@ -1,4 +1,4 @@
-package cn.maolin.syncer;
+package cn.maolin.syncer.aspect;
 
 import cn.hutool.core.util.StrUtil;
 import cn.maolin.syncer.annotation.Delete;
@@ -30,19 +30,15 @@ import org.springframework.util.StringUtils;
 @Data
 @Slf4j
 @Aspect
-public class SyncerAspect {
+public class MapperSyncerAspect {
 
   private final DocumentService documentService;
 
   private final ThreadService threadService;
 
-  public SyncerAspect(DocumentService documentService, ThreadService threadService) {
+  public MapperSyncerAspect(DocumentService documentService, ThreadService threadService) {
     this.documentService = documentService;
     this.threadService = threadService;
-  }
-
-  @Pointcut("@annotation(cn.maolin.syncer.annotation.ElasticSyncer)")
-  public void elasticSyncerPointCut() {
   }
 
   @Pointcut("@annotation(cn.maolin.syncer.annotation.Match)")
@@ -93,7 +89,6 @@ public class SyncerAspect {
         documentService.upsert(index, args[0]);
         return null;
       }
-
     }
 
     return joinPoint.proceed();
@@ -101,75 +96,39 @@ public class SyncerAspect {
 
   private Object doElasticMatch(String index, Object[] args, Class<?> clazz)
       throws InvocationTargetException, IllegalAccessException {
-    Object[] allParams = new Object[args.length + 2];
-    System.arraycopy(args, 0, allParams, 1, args.length);
-    allParams[0] = index;
-    allParams[args.length + 1] = clazz;
+    Object[] allArgs = new Object[args.length + 2];
+    System.arraycopy(args, 0, allArgs, 1, args.length);
+    allArgs[0] = index;
+    allArgs[args.length + 1] = clazz;
 
     Method[] methods = documentService.getClass().getMethods();
     for (Method method : methods) {
-      int paramCount = method.getParameterCount();
-      if (paramCount == allParams.length) {
-        return method.invoke(documentService, allParams);
+      if (!"match".equals(method.getName())) {
+        continue;
       }
+
+      if (!matchMethod(allArgs, method.getParameterTypes())) {
+        continue;
+      }
+
+      return method.invoke(documentService, allArgs);
     }
 
     return null;
   }
 
-  @AfterReturning("elasticSyncerPointCut()")
-  public void after(JoinPoint joinPoint)
-      throws IOException, NoSuchFieldException, IllegalAccessException {
-    MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
-    Method method = methodSignature.getMethod();
-    Object[] args = joinPoint.getArgs();
+  private boolean matchMethod(Object[] args, Class<?>[] clazz) {
+    if (args.length != clazz.length) {
+      return false;
+    }
 
-    ElasticSyncer syncer = method.getAnnotation(ElasticSyncer.class);
-    Parameter[] params = method.getParameters();
-    for (int i = 0; i < params.length; i++) {
-      Parameter param = params[i];
-      if (param.isAnnotationPresent(Push.class) ||
-          param.isAnnotationPresent(Delete.class) ||
-          param.isAnnotationPresent(DeleteById.class) ||
-          param.isAnnotationPresent(Update.class)) {
-        doElasticSync(param, syncer.index(), args[i], syncer.async());
+    for (int i = 0; i < args.length; i++) {
+      if (!clazz[i].isAssignableFrom(args[i].getClass())) {
+        return false;
       }
     }
-  }
 
-  private void doElasticSync(Parameter param, String index, Object arg, boolean async)
-      throws IOException, NoSuchFieldException, IllegalAccessException {
-    checkIndex(index);
-    if (!async) {
-      execute(param, index, arg);
-    } else {
-      threadService.submit(() -> {
-        try {
-          execute(param, index, arg);
-        } catch (IOException | NoSuchFieldException | IllegalAccessException e) {
-          throw new RuntimeException(e);
-        }
-      });
-    }
-  }
-
-  private void execute(Parameter param, String index, Object arg)
-      throws IOException, NoSuchFieldException, IllegalAccessException {
-    if (param.isAnnotationPresent(Push.class)) {
-      documentService.upsert(index, arg);
-    } else if (param.isAnnotationPresent(Delete.class)) {
-      documentService.delete(index, arg);
-    } else if (param.isAnnotationPresent(DeleteById.class)) {
-      documentService.deleteById(index, String.valueOf(arg));
-    } else if (param.isAnnotationPresent(Update.class)) {
-      documentService.update(index, arg);
-    }
-  }
-
-  private void checkIndex(String index) {
-    if (!StringUtils.hasText(index)) {
-      throw new IllegalArgumentException("Illegal elastic index");
-    }
+    return true;
   }
 
 }
