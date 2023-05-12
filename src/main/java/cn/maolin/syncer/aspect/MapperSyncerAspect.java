@@ -1,26 +1,19 @@
 package cn.maolin.syncer.aspect;
 
 import cn.hutool.core.util.StrUtil;
-import cn.maolin.syncer.annotation.Delete;
-import cn.maolin.syncer.annotation.DeleteById;
-import cn.maolin.syncer.annotation.ElasticSyncer;
+import cn.maolin.syncer.annotation.IndexName;
 import cn.maolin.syncer.annotation.Match;
 import cn.maolin.syncer.annotation.Push;
-import cn.maolin.syncer.annotation.Update;
 import cn.maolin.syncer.mapper.BaseEsMapper;
 import cn.maolin.syncer.service.DocumentService;
 import cn.maolin.syncer.service.ThreadService;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
@@ -75,9 +68,13 @@ public class MapperSyncerAspect {
     Class<?> superclass = mapperClazz.getSuperclass();
     if (superclass == BaseEsMapper.class) {
       String index = StrUtil.toUnderlineCase(modelClazz.getSimpleName());
-      ElasticSyncer syncer = mapperClazz.getAnnotation(ElasticSyncer.class);
-      if (syncer != null) {
-        index = StringUtils.hasText(syncer.index()) ? syncer.index() : index;
+
+      if (modelClazz.isAnnotationPresent(IndexName.class)) {
+        IndexName indexName = modelClazz.getAnnotation(IndexName.class);
+        if (!StringUtils.hasText(indexName.value())) {
+          throw new IllegalArgumentException("ElasticSearch index name should not be empty");
+        }
+        index = indexName.value();
       }
 
       Object[] args = joinPoint.getArgs();
@@ -87,7 +84,7 @@ public class MapperSyncerAspect {
         return doElasticMatch(index, args, modelClazz);
       } else if (method.isAnnotationPresent(Push.class)) {
         documentService.upsert(index, args[0]);
-        return null;
+        return joinPoint.proceed();
       }
     }
 
