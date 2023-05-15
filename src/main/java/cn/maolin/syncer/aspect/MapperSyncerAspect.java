@@ -69,7 +69,13 @@ public class MapperSyncerAspect {
     if (superclass == BaseEsMapper.class) {
       String index = StrUtil.toUnderlineCase(modelClazz.getSimpleName());
 
-      if (modelClazz.isAnnotationPresent(IndexName.class)) {
+      if (mapperClazz.isAnnotationPresent(IndexName.class)) {
+        IndexName indexName = mapperClazz.getAnnotation(IndexName.class);
+        if (!StringUtils.hasText(indexName.value())) {
+          throw new IllegalArgumentException("ElasticSearch index name should not be empty");
+        }
+        index = indexName.value();
+      } else if (modelClazz.isAnnotationPresent(IndexName.class)) {
         IndexName indexName = modelClazz.getAnnotation(IndexName.class);
         if (!StringUtils.hasText(indexName.value())) {
           throw new IllegalArgumentException("ElasticSearch index name should not be empty");
