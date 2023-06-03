@@ -1,3 +1,7 @@
+// ==========================
+// Copyright (c) 2023-05-10
+// All rights reserved.
+// ==========================
 package cn.maolin.syncer.annotation;
 
 import java.lang.annotation.Documented;
@@ -7,9 +11,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Documented
-@Target({ElementType.METHOD})
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ElasticSyncer {
+public @interface IndexName {
 
-  boolean async() default false;
+  String value();
 }

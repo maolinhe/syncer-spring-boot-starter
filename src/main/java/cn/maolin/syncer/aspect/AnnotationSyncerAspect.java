@@ -4,6 +4,7 @@ import cn.hutool.core.util.StrUtil;
 import cn.maolin.syncer.annotation.Delete;
 import cn.maolin.syncer.annotation.DeleteById;
 import cn.maolin.syncer.annotation.ElasticSyncer;
+import cn.maolin.syncer.annotation.IndexName;
 import cn.maolin.syncer.annotation.Push;
 import cn.maolin.syncer.annotation.Update;
 import cn.maolin.syncer.service.DocumentService;
@@ -53,19 +54,14 @@ public class AnnotationSyncerAspect {
           param.isAnnotationPresent(Delete.class) ||
           param.isAnnotationPresent(DeleteById.class) ||
           param.isAnnotationPresent(Update.class)) {
-        Object arg = args[i];
-        String index = syncer.index();
-        index = StringUtils.hasText(index) ? index
-            : StrUtil.toUnderlineCase(arg.getClass().getSimpleName());
-
-        doElasticSync(param, index, args[i], syncer.async());
+        doElasticSync(param, args[i], syncer.async());
       }
     }
   }
 
-  private void doElasticSync(Parameter param, String index, Object arg, boolean async)
+  private void doElasticSync(Parameter param, Object arg, boolean async)
       throws IOException, NoSuchFieldException, IllegalAccessException {
-    checkIndex(index);
+    String index = getIndex(arg);
     if (!async) {
       execute(param, index, arg);
     } else {
@@ -92,9 +88,16 @@ public class AnnotationSyncerAspect {
     }
   }
 
-  private void checkIndex(String index) {
-    if (!StringUtils.hasText(index)) {
-      throw new IllegalArgumentException("Illegal elastic index");
+  private String getIndex(Object arg) {
+    Class<?> clazz = arg.getClass();
+    if (clazz.isAnnotationPresent(IndexName.class)) {
+      IndexName indexName = clazz.getAnnotation(IndexName.class);
+      if (!StringUtils.hasText(indexName.value())) {
+        throw new IllegalArgumentException("ElasticSearch index name should not be empty");
+      }
+      return indexName.value();
+    } else {
+      return StrUtil.toUnderlineCase(clazz.getSimpleName());
     }
   }
 
