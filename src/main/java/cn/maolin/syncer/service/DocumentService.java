@@ -32,4 +32,9 @@ public interface DocumentService {
 
   <T> Hits<T> match(String index, Map<Object, List<String>> map, MatchWrapper wrapper,
       Class<T> clazz) throws IOException;
+
+  <T> Hits<T> boolMatch(String index, Map<Object, List<String>> map, Class<T> clazz) throws IOException;
+
+  <T> Hits<T> boolMatch(String index, Map<Object, List<String>> map, MatchWrapper wrapper,
+      Class<T> clazz) throws IOException;
 }

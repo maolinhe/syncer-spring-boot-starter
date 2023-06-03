@@ -20,6 +20,7 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.DisMaxQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -139,7 +140,7 @@ public class DocumentServiceImpl implements DocumentService {
     SearchRequest searchRequest = new SearchRequest(index);
     SearchSourceBuilder sourceBuilder = searchRequest.source();
 
-    DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery();
+    DisMaxQueryBuilder disMaxQueryBuilder = QueryBuilders.disMaxQuery().tieBreaker(1);
     List<QueryBuilder> multiDisMax = disMaxQueryBuilder.innerQueries();
     Iterator<Object> keyIter = map.keySet().iterator();
     while (keyIter.hasNext()) {
@@ -150,6 +151,54 @@ public class DocumentServiceImpl implements DocumentService {
       }
     }
     sourceBuilder.query(disMaxQueryBuilder);
+
+    long startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
+    sourceBuilder.from((int) startIndex).size(wrapper.getSize());
+
+    if (StringUtils.hasText(wrapper.getOrderBy())) {
+      if (SortOrder.ASC.name().equalsIgnoreCase(wrapper.getOrder().name())) {
+        sourceBuilder.sort(wrapper.getOrderBy(), SortOrder.ASC);
+      } else {
+        sourceBuilder.sort(wrapper.getOrderBy(), SortOrder.DESC);
+      }
+    }
+
+    SearchResponse response = restClient.search(searchRequest, RequestOptions.DEFAULT);
+    return parse(response, clazz);
+  }
+
+  @Override
+  public <T> Hits<T> boolMatch(String index, Map<Object, List<String>> map, Class<T> clazz)
+      throws IOException {
+    MatchWrapper matchWrapper = MatchWrapper.builder()
+        .page(1L, DEFAULT_MATCH_SIZE)
+        .build();
+    return boolMatch(index, map, matchWrapper, clazz);
+  }
+
+  @Override
+  public <T> Hits<T> boolMatch(String index, Map<Object, List<String>> map, MatchWrapper wrapper,
+      Class<T> clazz) throws IOException {
+    if (map == null || map.isEmpty()) {
+      Hits<T> tHits = new Hits<>();
+      tHits.setData(new ArrayList<>());
+      return tHits;
+    }
+
+    SearchRequest searchRequest = new SearchRequest(index);
+    SearchSourceBuilder sourceBuilder = searchRequest.source();
+
+    BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+    List<QueryBuilder> mustQueryBuilders = boolQueryBuilder.must();
+    Iterator<Object> keyIter = map.keySet().iterator();
+    while (keyIter.hasNext()) {
+      Object key = keyIter.next();
+      List<String> fields = map.get(key);
+      for (String field : fields) {
+        mustQueryBuilders.add(QueryBuilders.matchQuery(field, key));
+      }
+    }
+    sourceBuilder.query(boolQueryBuilder);
 
     long startIndex = (wrapper.getPage() - 1) * wrapper.getSize();
     sourceBuilder.from((int) startIndex).size(wrapper.getSize());

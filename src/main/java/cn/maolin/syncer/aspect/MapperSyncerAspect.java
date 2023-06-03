@@ -87,7 +87,7 @@ public class MapperSyncerAspect {
       MethodSignature methodSignature = (MethodSignature) joinPoint.getSignature();
       Method method = methodSignature.getMethod();
       if (method.isAnnotationPresent(Match.class)) {
-        return doElasticMatch(index, args, modelClazz);
+        return doElasticMatch(method, index, args, modelClazz);
       } else if (method.isAnnotationPresent(Push.class)) {
         documentService.upsert(index, args[0]);
         return joinPoint.proceed();
@@ -97,24 +97,22 @@ public class MapperSyncerAspect {
     return joinPoint.proceed();
   }
 
-  private Object doElasticMatch(String index, Object[] args, Class<?> clazz)
+  private Object doElasticMatch(Method mapperMethod, String index, Object[] args, Class<?> clazz)
       throws InvocationTargetException, IllegalAccessException {
     Object[] allArgs = new Object[args.length + 2];
     System.arraycopy(args, 0, allArgs, 1, args.length);
     allArgs[0] = index;
     allArgs[args.length + 1] = clazz;
 
+    String mapperMethodName = mapperMethod.getName();
     Method[] methods = documentService.getClass().getMethods();
     for (Method method : methods) {
-      if (!"match".equals(method.getName())) {
-        continue;
+      String name = method.getName();
+      if (name.equals(mapperMethodName)) {
+        if (matchMethod(allArgs, method.getParameterTypes())) {
+          return method.invoke(documentService, allArgs);
+        }
       }
-
-      if (!matchMethod(allArgs, method.getParameterTypes())) {
-        continue;
-      }
-
-      return method.invoke(documentService, allArgs);
     }
 
     return null;

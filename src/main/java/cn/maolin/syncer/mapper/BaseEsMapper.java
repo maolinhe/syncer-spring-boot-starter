@@ -32,4 +32,14 @@ public abstract class BaseEsMapper<T> {
   public Hits<T> match(Map<Object, List<String>> matchMap, MatchWrapper matchWrapper) {
     return null;
   }
+
+  @Match
+  public Hits<T> boolMatch(Map<Object, List<String>> matchMap) {
+    return null;
+  }
+
+  @Match
+  public Hits<T> boolMatch(Map<Object, List<String>> matchMap, MatchWrapper matchWrapper) {
+    return null;
+  }
 }
